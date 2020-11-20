@@ -23,6 +23,9 @@ class Ellipse:
 
     bias_correction = True
 
+    # buffer for exponentially weighted averages
+    v = np.array([0, 0])
+
     def forward(self, points):
         return points[:, 0] ** 2 / self.a + points[:, 1] ** 2 / self.b
 
@@ -42,29 +45,28 @@ class Ellipse:
         cont = axis.contour(xx, yy, Z, colors=[(0.7,0.7,0.7)], levels=[0.2, 1,5,10,15,20,30])
         cont.clabel(fmt='%1.1f', fontsize=14)
 
-    def plot_gradient_descent(self, axis):
+    def plot_gradient_descent(self, axis, colors, linewidths, *, momentum = False):
         p = self.initial_point
         points = np.array(p)
 
         for i in range(self.steps):
-            p = self.next(p)
+            p = self.next(p, i + 1, momentum=momentum)
             points = np.append(points, p)
 
         points = points.reshape(-1, 2)
         N = points.shape[0]
 
-        ewa = exponential_weighted_averages(points, self.beta, self.bias_correction)
-
         lines1 = [[points[i], points[i+1]] for i in range(N - 1)]
-        lines2 = [[ewa[i], ewa[i+1]] for i in range(N - 1)]
-
-        lc1 = mc.LineCollection(lines1, colors=[(0,1,0)], linewidths=4)
-        lc2 = mc.LineCollection(lines2, colors=(1,0,0))
+        lc1 = mc.LineCollection(lines1, colors=colors, linewidths=linewidths)
         axis.add_collection(lc1)
-        axis.add_collection(lc2)
 
-    def next(self, p):
+    def next(self, p, current_step, *, momentum):
         df = self.backward(p)
+        if momentum:
+            correction = (1 - self.beta ** current_step) if self.bias_correction else 1
+            self.v = self.v * self.beta + df * (1 - self.beta) / correction
+            df = self.v
+
         return p - self.learning_rate * df
 
     def plot(self):
@@ -74,21 +76,10 @@ class Ellipse:
         plt.xlabel('x')
 
         self.plot_contour(ax)
-        self.plot_gradient_descent(ax)
+        self.plot_gradient_descent(ax, [(0,1,0)], 4)
+        self.plot_gradient_descent(ax, [(1,0,0)], 1, momentum = True)
 
         plt.show()
-
-def exponential_weighted_averages(steps, beta, bias_correction = True):
-    v = np.zeros((1,2))
-    avg = np.empty(0)
-
-    for i, p in enumerate(steps):
-        v = v * beta + (1 - beta) * p
-        correction = (1 - beta ** (i + 1)) if bias_correction else 1
-        avg = np.append(avg, v / correction)
-
-    return avg.reshape(-1, 2)
-
 
 def main():
     ellipse = Ellipse()
