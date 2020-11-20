@@ -17,7 +17,7 @@ class Ellipse:
 
     # hyper parameters
     learning_rate = 0.95
-    beta = 0.5               # for exponential_weighted_averages
+    beta1 = 0.5               # for exponential_weighted_averages
     initial_point = np.array([-19., 5.])
     steps = 50
 
@@ -63,9 +63,9 @@ class Ellipse:
     def next(self, p, current_step, *, momentum):
         df = self.backward(p)
         if momentum:
-            correction = (1 - self.beta ** current_step) if self.bias_correction else 1
-            self.v = self.v * self.beta + df * (1 - self.beta) / correction
-            df = self.v
+            correction = (1 - self.beta1 ** current_step) if self.bias_correction else 1
+            self.v = self.v * self.beta1 + df * (1 - self.beta1)
+            df = self.v / correction
 
         return p - self.learning_rate * df
 
