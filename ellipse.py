@@ -5,7 +5,7 @@ import matplotlib.collections as mc
 
 class Ellipse:
     # coefficients of the ellipse
-    a = 10
+    a = 100
     b = 1
 
     # graph max
@@ -19,12 +19,12 @@ class Ellipse:
     learning_rate = 0.95
     beta = 0.5               # for exponential_weighted_averages
     initial_point = np.array([-19., 5.])
-    steps = 13
+    steps = 50
 
     bias_correction = True
 
     def forward(self, points):
-        return (points[:, 0] / self.a) ** 2 + (points[:, 1] / self.b) ** 2
+        return points[:, 0] ** 2 / self.a + points[:, 1] ** 2 / self.b
 
     def backward(self, point):
         return np.array([point[0] * 2 / self.a, point[1] * 2 / self.b])
